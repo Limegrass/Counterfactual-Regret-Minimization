@@ -65,7 +65,7 @@ class PokerTrainer(object):
 	def cfr(self, cards, history, p0, p1):
 		result = self.evaluateGame(cards, history, self.game)
 		plays = len(history)
-		if result:
+		if not result is None:
 			return result
 
 		if self.game == "kuhn":
@@ -134,6 +134,7 @@ class PokerTrainer(object):
 			doubleBetRound2Min = (history == "pppbb" or history == "ppbb")
 			doubleBetRound2Max = (history == "pbbpbb" or history == "bbpbb" or history == "pbbbb" or history == "bbbb")
 			winner = (cards[player] == cards[2] or (cards[opponent] != cards[2] and cards[player] > cards[opponent]))
+			tie = cards[player] == cards[opponent]
 
 			if passAfterBetRound1:
 				return 1
@@ -142,12 +143,20 @@ class PokerTrainer(object):
 			if passAfterBetRound2Max:
 				return 2
 			if passAfterPassRound2Min:
+				if tie:
+					return 0
 				return 1 if winner else -1
 			if passAfterPassRound2Max:
+				if tie:
+					return 0
 				return 2 if winner else -2
 			if doubleBetRound2Min:
+				if tie:
+					return 0
 				return 2 if winner else -2
 			if doubleBetRound2Max:
+				if tie:
+					return 0
 				return 4 if winner else -4
 
 		return None
