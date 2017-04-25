@@ -134,10 +134,10 @@ class PokerTrainer(object):
 	def evaluateGame(self, history):
 		#Returns earnings if it is a terminal state and using Kuhn Poker
 		if self.game == "kuhn":
-			return kuhnEval(history)
+			return self.kuhnEval(history)
 		
 		elif self.game == "leduc":
-			return leducEval(history)
+			return self.leducEval(history)
 			
 		#Returns none if not a game (never a case)
 		#Or when not a terminal state (no conditions met to end game)
