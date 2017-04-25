@@ -53,31 +53,31 @@ class PokerTrainer(object):
 	#Initialize a game tree history
 	def __init__(self, game):
 		self.game = game
+		if self.game == "kuhn":
+			self.cards = KUHN_DECK
+		if self.game == "leduc":
+			self.cards = LEDUC_DECK
 		self.gameTree = {}
 
 	def train(self, iterations):
 	#Called from main function, uses saved game type
-		if self.game == "kuhn":
-			cards = KUHN_DECK
-		if self.game == "leduc":
-			cards = LEDUC_DECK
 		
 		#Set initial utility to float zero
 		utility = 0.0
 		for _ in range(iterations):
 			#Randomizes array
-			random.shuffle(cards)
+			random.shuffle(self.cards)
 			#Adds utiity gained after evaluation?
 			#The 1.0 are probability to play by the CFR Measurement?
-			utility += self.cfr(cards, "", 1.0, 1.0)
+			utility += self.cfr("", 1.0, 1.0)
 		#Print Outcome/winnings and each individual percentage to performt hat action
 		print("Average utility: ", utility / iterations)
 		for gameState in sorted(self.gameTree.keys()):
 			print(gameState, self.gameTree[gameState].getAverageStrategy())
 
-	def cfr(self, cards, history, p0, p1):
+	def cfr(self, history, p0, p1):
 		#Finds number result of utility gained for play
-		result = self.evaluateGame(cards, history)
+		result = self.evaluateGame(history)
 		plays = len(history)
 		
 		#If it was a terminal state, return the result
@@ -87,14 +87,14 @@ class PokerTrainer(object):
 		#Define current player and append to history
 		if self.game == "kuhn":
 			player = plays % 2
-			gameState = str(cards[player]) + history
+			gameState = str(self.cards[player]) + history
 
 		if self.game == "leduc":
 			player = plays % 2 if plays <= 2 or history[:2] == "pp" or history[:2] == "bb" else 1 - plays % 2
 			if (plays > 2 and (history[:2] == "pp" or history[:2] == "bb")) or (plays > 3 and history[:3] == "pbb"):
-				gameState = str(cards[player]) + str(cards[2]) + history
+				gameState = str(self.cards[player]) + str(self.cards[2]) + history
 			else:
-				gameState = str(cards[player]) + history
+				gameState = str(self.cards[player]) + history
 
 
 		#If the current game state has already existed
@@ -115,9 +115,9 @@ class PokerTrainer(object):
 			nextHistory = history + ("p" if i == 0 else "b")
 			#Use updated probability to reach the next game state
 			if player == 0:
-				utilities[i] = - self.cfr(cards, nextHistory, p0 * strategy[i], p1)
+				utilities[i] = - self.cfr(nextHistory, p0 * strategy[i], p1)
 			else:
-				utilities[i] = - self.cfr(cards, nextHistory, p0, p1 * strategy[i])
+				utilities[i] = - self.cfr(nextHistory, p0, p1 * strategy[i])
 			#Sum resulting utility for each strategy
 			totalUtility += utilities[i] * strategy[i]
 		for i in range(NUM_ACTIONS):
@@ -127,7 +127,7 @@ class PokerTrainer(object):
 			node.regretSum[i] += regret * (p1 if player == 0 else p0)
 		return totalUtility
 
-	def evaluateGame(self, cards, history):
+	def evaluateGame(self, history):
 		#Number of moves made
 		plays = len(history)
 		
@@ -142,7 +142,7 @@ class PokerTrainer(object):
 			passAfterBet = (history == "bp" or history == "pbp")
 			doubleBet = (history == "bb" or history == "pbb")
 			#winner is true if player wins
-			winner = cards[player] > cards[opponent]
+			winner = self.cards[player] > self.cards[opponent]
 
 			if passAfterPass:
 				return 1 if winner else -1
@@ -166,8 +166,8 @@ class PokerTrainer(object):
 			passAfterPassRound2Max = (history == "pbbpp" or history == "bbpp")
 			doubleBetRound2Min = (history == "pppbb" or history == "ppbb")
 			doubleBetRound2Max = (history == "pbbpbb" or history == "bbpbb" or history == "pbbbb" or history == "bbbb")
-			winner = (cards[player] == cards[2] or (cards[opponent] != cards[2] and cards[player] > cards[opponent]))
-			tie = cards[player] == cards[opponent]
+			winner = (self.cards[player] == self.cards[2] or (self.cards[opponent] != self.cards[2] and self.cards[player] > self.cards[opponent]))
+			tie = self.cards[player] == self.cards[opponent]
 
 			if passAfterBetRound1:
 				return 1
