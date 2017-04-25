@@ -77,7 +77,7 @@ class PokerTrainer(object):
 
 	def cfr(self, cards, history, p0, p1):
 		#Finds number result of utility gained for play
-		result = self.evaluateGame(cards, history, self.game)
+		result = self.evaluateGame(cards, history)
 		plays = len(history)
 		
 		#If it was a terminal state, return the result
@@ -127,12 +127,12 @@ class PokerTrainer(object):
 			node.regretSum[i] += regret * (p1 if player == 0 else p0)
 		return totalUtility
 
-	def evaluateGame(self, cards, history, game):
+	def evaluateGame(self, cards, history):
 		#Number of moves made
 		plays = len(history)
 		
 		#Returns earnings if it is a terminal state and using Kuhn Poker
-		if game == "kuhn":
+		if self.game == "kuhn":
 			#Defines the player and opponent for current turn
 			player = plays % 2
 			opponent = 1 - player
@@ -151,7 +151,7 @@ class PokerTrainer(object):
 			if doubleBet:
 				return 2 if winner else -2
 
-		if game == "leduc":
+		if self.game == "leduc":
 			if plays <= 2 or history[:2] == "pp" or history[:2] == "bb":
 				player = plays % 2
 				opponent = 1 - player
