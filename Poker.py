@@ -19,16 +19,20 @@ class gameTreeNode(object):
 		self.strategy = [0.0] * NUM_ACTIONS
 		self.strategySum = [0.0] * NUM_ACTIONS
 
+	#Returns the least regretful strategy as defined by cfr
 	def getStrategy(self, probability):
 		sum = 0
+		#Sum all positive strategies
 		for i in range(NUM_ACTIONS):
 			self.strategy[i] = self.regretSum[i] if self.regretSum[i] > 0 else 0
 			sum += self.strategy[i]
+		#Gives percentage to do one strategy over the other
 		for i in range(NUM_ACTIONS):
 			if sum > 0:
 				self.strategy[i] /= sum
 			else:
 				self.strategy[i] = 1.0 / NUM_ACTIONS
+			#probability = percentage chance to reach this game state
 			self.strategySum[i] += self.strategy[i] * probability
 		return self.strategy
 
@@ -45,29 +49,42 @@ class gameTreeNode(object):
 		return averageStrategy
 
 class PokerTrainer(object):
+	#Save game type
+	#Initialize a game tree history
 	def __init__(self, game):
 		self.game = game
 		self.gameTree = {}
 
 	def train(self, iterations):
+	#Called from main function, uses saved game type
 		if self.game == "kuhn":
 			cards = KUHN_DECK
 		if self.game == "leduc":
 			cards = LEDUC_DECK
+		
+		#Set initial utility to float zero
 		utility = 0.0
 		for _ in range(iterations):
+			#Randomizes array
 			random.shuffle(cards)
+			#Adds utiity gained after evaluation?
+			#The 1.0 are probability to play by the CFR Measurement?
 			utility += self.cfr(cards, "", 1.0, 1.0)
+		#Print Outcome/winnings and each individual percentage to performt hat action
 		print("Average utility: ", utility / iterations)
 		for gameState in sorted(self.gameTree.keys()):
 			print(gameState, self.gameTree[gameState].getAverageStrategy())
 
 	def cfr(self, cards, history, p0, p1):
+		#Finds number result of utility gained for play
 		result = self.evaluateGame(cards, history, self.game)
 		plays = len(history)
+		
+		#If it was a terminal state, return the result
 		if not result is None:
 			return result
-
+		
+		#Define current player and append to history
 		if self.game == "kuhn":
 			player = plays % 2
 			gameState = str(cards[player]) + history
@@ -80,35 +97,51 @@ class PokerTrainer(object):
 				gameState = str(cards[player]) + history
 
 
+		#If the current game state has already existed
+		#Then create a pointer to the node for the same state
 		if gameState in self.gameTree:
 			node = self.gameTree[gameState]
+		#Else create the state for the current game state
 		else:
 			node = gameTreeNode(gameState)
 			self.gameTree[gameState] = node
+		#Tells what strategy to play
+		#0 if pass, else bet
 		strategy = node.getStrategy(p0 if player == 0 else p1)
 		utilities = [0.0] * NUM_ACTIONS
 		totalUtility = 0.0
 		for i in range(NUM_ACTIONS):
+			#Update history and recursive call to function to decide next step
 			nextHistory = history + ("p" if i == 0 else "b")
+			#Use updated probability to reach the next game state
 			if player == 0:
 				utilities[i] = - self.cfr(cards, nextHistory, p0 * strategy[i], p1)
 			else:
 				utilities[i] = - self.cfr(cards, nextHistory, p0, p1 * strategy[i])
+			#Sum resulting utility for each strategy
 			totalUtility += utilities[i] * strategy[i]
 		for i in range(NUM_ACTIONS):
+			#Diff between gain for an action vs total possible gain?
 			regret = utilities[i] - totalUtility
+			#Regret for choosing that decision
 			node.regretSum[i] += regret * (p1 if player == 0 else p0)
 		return totalUtility
 
 	def evaluateGame(self, cards, history, game):
+		#Number of moves made
 		plays = len(history)
+		
+		#Returns earnings if it is a terminal state and using Kuhn Poker
 		if game == "kuhn":
+			#Defines the player and opponent for current turn
 			player = plays % 2
 			opponent = 1 - player
 
+			#Finds which sequence of moves was conducted
 			passAfterPass = history == "pp"
 			passAfterBet = (history == "bp" or history == "pbp")
 			doubleBet = (history == "bb" or history == "pbb")
+			#winner is true if player wins
 			winner = cards[player] > cards[opponent]
 
 			if passAfterPass:
@@ -158,13 +191,18 @@ class PokerTrainer(object):
 				if tie:
 					return 0
 				return 4 if winner else -4
-
+			
+			
+		#Returns none if not a game (never a case)
+		#Or when not a terminal state (no conditions met to end game)
 		return None
 
 
 
 def main():
-	trainer = PokerTrainer("kuhn")
+	#Takes input of game type
+	trainer = PokerTrainer("kuhn") 
+	#Number of trials
 	trainer.train(100000)
 
 if __name__ == "__main__":
