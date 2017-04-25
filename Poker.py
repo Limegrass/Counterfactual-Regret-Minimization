@@ -152,11 +152,11 @@ class PokerTrainer(object):
 		player = plays % 2
 		opponent = 1 - player
 		
-		lastActs = history[-2:]
 		#If not terminal
-		#Same action
-		showdown = (lastActs[0] == lastActs[1])
-		leadingBet = (lastActs[0]=="b")
+		#Same action leads to a showdown
+		#Checks the last two moves
+		showdown = (history[-1] == history[-2])
+		leadingBet = (history[-2]=="b")
 		if showdown:
 			winner = self.cards[player] > self.cards[opponent]
 			if leadingBet:
@@ -176,11 +176,11 @@ class PokerTrainer(object):
 			opponent = plays % 2
 			player = 1 - opponent
 
-		#passAfterBetRound1 = (history == "bp" or history == "pbp")
-		#passAfterBetRound2Min = (history == "ppbp" or history == "pppbp")
-		#passAfterPassRound2Min = history == "pppp"
-		lastActs = history[-2:]
-		showdown = lastAct[0]==lastAct[1]
+		passAfterBetRound1 = (history == "bp" or history == "pbp")
+		passAfterBetRound2Min = (history == "ppbp" or history == "pppbp")
+		passAfterPassRound2Min = history == "pppp"
+		#lastActs = history[-2:]
+		#showdown = lastAct[0]==lastAct[1]
 		
 		passAfterBetRound2Max = (history == "pbbbp" or history == "bbbp" or history == "pbbpbp" or history == "bbpbp")
 		passAfterPassRound2Max = (history == "pbbpp" or history == "bbpp")
@@ -220,7 +220,7 @@ def main():
 	#Takes input of game type
 	trainer = PokerTrainer("kuhn") 
 	#Number of trials
-	trainer.train(400000)
+	trainer.train(100000)
 
 if __name__ == "__main__":
 	main()
