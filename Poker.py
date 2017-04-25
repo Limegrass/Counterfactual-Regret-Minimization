@@ -147,13 +147,13 @@ class PokerTrainer(object):
 	def kuhnEval(self, history):
 		#Defines the player and opponent for current turn
 		plays = len(history)
+		if plays < 2:
+			return None
 		player = plays % 2
 		opponent = 1 - player
 		
 		lastActs = history[-2:]
 		#If not terminal
-		if plays < 2:
-			return None
 		#Same action
 		showdown = (lastActs[0] == lastActs[1])
 		leadingBet = (lastActs[0]=="b")
@@ -162,7 +162,7 @@ class PokerTrainer(object):
 			if leadingBet:
 				return 2 if winner else -2
 			return 1 if winner else -1
-		#If Not leadingBet and showdown, it's a bet pass
+		#If not leadingBet and showdown, it's a bet pass
 		#if not leading bet, it was a pass bet and we should return None
 		return 1 if leadingBet else None
 	
