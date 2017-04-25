@@ -63,7 +63,6 @@ class PokerTrainer(object):
 	#Trains the AI to decide on an optimal, Nash EQ strategy
 	def train(self, iterations):
 	#Called from main function, uses saved game type
-		
 		#Set initial utility to float zero
 		utility = 0.0
 		for _ in range(iterations):
@@ -88,6 +87,7 @@ class PokerTrainer(object):
 			return result
 		
 		#Define current player and append to history
+		#Why not just track player as a parameter to pass through the recursive call
 		if self.game == "kuhn":
 			player = plays % 2
 			gameState = str(self.cards[player]) + history
@@ -133,6 +133,7 @@ class PokerTrainer(object):
 	#else returns None
 	def evaluateGame(self, history):
 		#Returns earnings if it is a terminal state and using Kuhn Poker
+		#Returns None if not terminal
 		if self.game == "kuhn":
 			return self.kuhnEval(history)
 		
@@ -141,7 +142,6 @@ class PokerTrainer(object):
 			
 		#Returns none if not a game (never a case)
 		#Or when not a terminal state (no conditions met to end game)
-		return None
 	
 	#Returns the value of the play in Kuhn Poker if it is a terminal state
 	def kuhnEval(self, history):
@@ -149,20 +149,22 @@ class PokerTrainer(object):
 		plays = len(history)
 		player = plays % 2
 		opponent = 1 - player
-
-		#Finds which sequence of moves was conducted
-		passAfterPass = history == "pp"
-		passAfterBet = (history == "bp" or history == "pbp")
-		doubleBet = (history == "bb" or history == "pbb")
-		#winner is true if player wins
-		winner = self.cards[player] > self.cards[opponent]
-
-		if passAfterPass:
+		
+		lastActs = history[-2:]
+		#If not terminal
+		if plays < 2:
+			return None
+		#Same action
+		showdown = (lastActs[0] == lastActs[1])
+		leadingBet = (lastActs[0]=="b")
+		if showdown:
+			winner = self.cards[player] > self.cards[opponent]
+			if leadingBet:
+				return 2 if winner else -2
 			return 1 if winner else -1
-		if passAfterBet:
-			return 1
-		if doubleBet:
-			return 2 if winner else -2
+		#If Not leadingBet and showdown, it's a bet pass
+		#if not leading bet, it was a pass bet and we should return None
+		return 1 if leadingBet else None
 	
 	#Returns the value of the play in Leduc Poker if it is a terminal state
 	def leducEval(self, history):
@@ -174,10 +176,13 @@ class PokerTrainer(object):
 			opponent = plays % 2
 			player = 1 - opponent
 
-		passAfterBetRound1 = (history == "bp" or history == "pbp")
-		passAfterBetRound2Min = (history == "ppbp" or history == "pppbp")
+		#passAfterBetRound1 = (history == "bp" or history == "pbp")
+		#passAfterBetRound2Min = (history == "ppbp" or history == "pppbp")
+		#passAfterPassRound2Min = history == "pppp"
+		lastActs = history[-2:]
+		showdown = lastAct[0]==lastAct[1]
+		
 		passAfterBetRound2Max = (history == "pbbbp" or history == "bbbp" or history == "pbbpbp" or history == "bbpbp")
-		passAfterPassRound2Min = history == "pppp"
 		passAfterPassRound2Max = (history == "pbbpp" or history == "bbpp")
 		doubleBetRound2Min = (history == "pppbb" or history == "ppbb")
 		doubleBetRound2Max = (history == "pbbpbb" or history == "bbpbb" or history == "pbbbb" or history == "bbbb")
@@ -215,7 +220,7 @@ def main():
 	#Takes input of game type
 	trainer = PokerTrainer("kuhn") 
 	#Number of trials
-	trainer.train(100000)
+	trainer.train(400000)
 
 if __name__ == "__main__":
 	main()
