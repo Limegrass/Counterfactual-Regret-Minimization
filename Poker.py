@@ -5,6 +5,7 @@ NUM_ACTIONS = 2
 KUHN_DECK = [1,2,3]
 LEDUC_DECK = [1,1,2,2,3,3]
 
+#Tracks the regret per game stage
 class gameTreeNode(object):
 	"""
 	gameState - Players card and history of actions taken
@@ -59,6 +60,7 @@ class PokerTrainer(object):
 			self.cards = LEDUC_DECK
 		self.gameTree = {}
 
+	#Trains the AI to decide on an optimal, Nash EQ strategy
 	def train(self, iterations):
 	#Called from main function, uses saved game type
 		
@@ -75,6 +77,7 @@ class PokerTrainer(object):
 		for gameState in sorted(self.gameTree.keys()):
 			print(gameState, self.gameTree[gameState].getAverageStrategy())
 
+	#Calculates one step of Counterfactual regret
 	def cfr(self, history, p0, p1):
 		#Finds number result of utility gained for play
 		result = self.evaluateGame(history)
@@ -88,8 +91,7 @@ class PokerTrainer(object):
 		if self.game == "kuhn":
 			player = plays % 2
 			gameState = str(self.cards[player]) + history
-
-		if self.game == "leduc":
+		elif self.game == "leduc":
 			player = plays % 2 if plays <= 2 or history[:2] == "pp" or history[:2] == "bb" else 1 - plays % 2
 			if (plays > 2 and (history[:2] == "pp" or history[:2] == "bb")) or (plays > 3 and history[:3] == "pbb"):
 				gameState = str(self.cards[player]) + str(self.cards[2]) + history
@@ -127,75 +129,85 @@ class PokerTrainer(object):
 			node.regretSum[i] += regret * (p1 if player == 0 else p0)
 		return totalUtility
 
+	#returns the value of the game if it is terminal
+	#else returns None
 	def evaluateGame(self, history):
-		#Number of moves made
-		plays = len(history)
-		
 		#Returns earnings if it is a terminal state and using Kuhn Poker
 		if self.game == "kuhn":
-			#Defines the player and opponent for current turn
-			player = plays % 2
-			opponent = 1 - player
-
-			#Finds which sequence of moves was conducted
-			passAfterPass = history == "pp"
-			passAfterBet = (history == "bp" or history == "pbp")
-			doubleBet = (history == "bb" or history == "pbb")
-			#winner is true if player wins
-			winner = self.cards[player] > self.cards[opponent]
-
-			if passAfterPass:
-				return 1 if winner else -1
-			if passAfterBet:
-				return 1
-			if doubleBet:
-				return 2 if winner else -2
-
-		if self.game == "leduc":
-			if plays <= 2 or history[:2] == "pp" or history[:2] == "bb":
-				player = plays % 2
-				opponent = 1 - player
-			else:
-				opponent = plays % 2
-				player = 1 - opponent
-
-			passAfterBetRound1 = (history == "bp" or history == "pbp")
-			passAfterBetRound2Min = (history == "ppbp" or history == "pppbp")
-			passAfterBetRound2Max = (history == "pbbbp" or history == "bbbp" or history == "pbbpbp" or history == "bbpbp")
-			passAfterPassRound2Min = history == "pppp"
-			passAfterPassRound2Max = (history == "pbbpp" or history == "bbpp")
-			doubleBetRound2Min = (history == "pppbb" or history == "ppbb")
-			doubleBetRound2Max = (history == "pbbpbb" or history == "bbpbb" or history == "pbbbb" or history == "bbbb")
-			winner = (self.cards[player] == self.cards[2] or (self.cards[opponent] != self.cards[2] and self.cards[player] > self.cards[opponent]))
-			tie = self.cards[player] == self.cards[opponent]
-
-			if passAfterBetRound1:
-				return 1
-			if passAfterBetRound2Min:
-				return 1
-			if passAfterBetRound2Max:
-				return 2
-			if passAfterPassRound2Min:
-				if tie:
-					return 0
-				return 1 if winner else -1
-			if passAfterPassRound2Max:
-				if tie:
-					return 0
-				return 2 if winner else -2
-			if doubleBetRound2Min:
-				if tie:
-					return 0
-				return 2 if winner else -2
-			if doubleBetRound2Max:
-				if tie:
-					return 0
-				return 4 if winner else -4
-			
+			return kuhnEval(history)
+		
+		elif self.game == "leduc":
+			return leducEval(history)
 			
 		#Returns none if not a game (never a case)
 		#Or when not a terminal state (no conditions met to end game)
 		return None
+	
+	#Returns the value of the play in Kuhn Poker if it is a terminal state
+	def kuhnEval(self, history):
+		#Defines the player and opponent for current turn
+		plays = len(history)
+		player = plays % 2
+		opponent = 1 - player
+
+		#Finds which sequence of moves was conducted
+		passAfterPass = history == "pp"
+		passAfterBet = (history == "bp" or history == "pbp")
+		doubleBet = (history == "bb" or history == "pbb")
+		#winner is true if player wins
+		winner = self.cards[player] > self.cards[opponent]
+
+		if passAfterPass:
+			return 1 if winner else -1
+		if passAfterBet:
+			return 1
+		if doubleBet:
+			return 2 if winner else -2
+	
+	#Returns the value of the play in Leduc Poker if it is a terminal state
+	def leducEval(self, history):
+		plays = len(history)
+		if plays <= 2 or history[:2] == "pp" or history[:2] == "bb":
+			player = plays % 2
+			opponent = 1 - player
+		else:
+			opponent = plays % 2
+			player = 1 - opponent
+
+		passAfterBetRound1 = (history == "bp" or history == "pbp")
+		passAfterBetRound2Min = (history == "ppbp" or history == "pppbp")
+		passAfterBetRound2Max = (history == "pbbbp" or history == "bbbp" or history == "pbbpbp" or history == "bbpbp")
+		passAfterPassRound2Min = history == "pppp"
+		passAfterPassRound2Max = (history == "pbbpp" or history == "bbpp")
+		doubleBetRound2Min = (history == "pppbb" or history == "ppbb")
+		doubleBetRound2Max = (history == "pbbpbb" or history == "bbpbb" or history == "pbbbb" or history == "bbbb")
+		winner = (self.cards[player] == self.cards[2] or (self.cards[opponent] != self.cards[2] and self.cards[player] > self.cards[opponent]))
+		tie = self.cards[player] == self.cards[opponent]
+
+		if passAfterBetRound1:
+			return 1
+		if passAfterBetRound2Min:
+			return 1
+		if passAfterBetRound2Max:
+			return 2
+		if passAfterPassRound2Min:
+			if tie:
+				return 0
+			return 1 if winner else -1
+		if passAfterPassRound2Max:
+			if tie:
+				return 0
+			return 2 if winner else -2
+		if doubleBetRound2Min:
+			if tie:
+				return 0
+			return 2 if winner else -2
+		if doubleBetRound2Max:
+			if tie:
+				return 0
+			return 4 if winner else -4
+
+
 
 
 
