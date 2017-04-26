@@ -56,7 +56,7 @@ class PokerTrainer(object):
 		self.game = game
 		if self.game == "kuhn":
 			self.cards = KUHN_DECK
-		if self.game == "leduc":
+		elif self.game == "leduc":
 			self.cards = LEDUC_DECK
 		self.gameTree = {}
 
@@ -70,17 +70,18 @@ class PokerTrainer(object):
 			random.shuffle(self.cards)
 			#Adds utiity gained after evaluation?
 			#The 1.0 are probability to play by the CFR Measurement?
-			utility += self.cfr("", 1.0, 1.0)
+			utility += self.cfr("", 1.0, 1.0, 0)
 		#Print Outcome/winnings and each individual percentage to performt hat action
 		print("Average utility: ", utility / iterations)
 		for gameState in sorted(self.gameTree.keys()):
 			print(gameState, self.gameTree[gameState].getAverageStrategy())
 
 	#Calculates one step of Counterfactual regret
-	def cfr(self, history, p0, p1):
+	def cfr(self, history, p0, p1, roundCounter):
 		#Finds number result of utility gained for play
 		result = self.evaluateGame(history)
 		plays = len(history)
+		currentPlayer = roundCounter%2
 		
 		#If it was a terminal state, return the result
 		if not result is None:
@@ -89,14 +90,15 @@ class PokerTrainer(object):
 		#Define current player and append to history
 		#Why not just track player as a parameter to pass through the recursive call
 		if self.game == "kuhn":
-			player = plays % 2
-			gameState = str(self.cards[player]) + history
+			#player = plays % 2
+			
+			gameState = str(self.cards[currentPlayer]) + history
 		elif self.game == "leduc":
 			player = plays % 2 if plays <= 2 or history[:2] == "pp" or history[:2] == "bb" else 1 - plays % 2
 			if (plays > 2 and (history[:2] == "pp" or history[:2] == "bb")) or (plays > 3 and history[:3] == "pbb"):
-				gameState = str(self.cards[player]) + str(self.cards[2]) + history
+				gameState = str(self.cards[currentPlayer]) + str(self.cards[2]) + history
 			else:
-				gameState = str(self.cards[player]) + history
+				gameState = str(self.cards[currentPlayer]) + history
 
 
 		#If the current game state has already existed
@@ -109,26 +111,59 @@ class PokerTrainer(object):
 			self.gameTree[gameState] = node
 		#Tells what strategy to play
 		#0 if pass, else bet
-		strategy = node.getStrategy(p0 if player == 0 else p1)
+		strategy = node.getStrategy(p0 if currentPlayer== 0 else p1)
 		utilities = [0.0] * NUM_ACTIONS
 		totalUtility = 0.0
 		for i in range(NUM_ACTIONS):
 			#Update history and recursive call to function to decide next step
 			nextHistory = history + ("p" if i == 0 else "b")
+			nextRoundCounter = roundCounter
 			#Use updated probability to reach the next game state
-			if player == 0:
-				utilities[i] = - self.cfr(nextHistory, p0 * strategy[i], p1)
+			if currentPlayer == 0:
+				nextP0 = p0 * strategy[i]
+				nextP1 = p1
 			else:
-				utilities[i] = - self.cfr(nextHistory, p0, p1 * strategy[i])
+				nextP0 = p0 
+				nextP1 = p1 * strategy[i]
+
+			if roundCounter == 0:
+				nextRoundCounter += 1
+			elif roundCounter == 1 and nextHistory == "pb":
+				nextRoundCounter += 1
+			else:
+				nextRoundCounter = 0
+				
+			
+			utilities[i] = -self.cfr(nextHistory, nextP0, nextP1, nextRoundCounter)
+			
 			#Sum resulting utility for each strategy
 			totalUtility += utilities[i] * strategy[i]
 		for i in range(NUM_ACTIONS):
 			#Diff between gain for an action vs total possible gain?
 			regret = utilities[i] - totalUtility
 			#Regret for choosing that decision
-			node.regretSum[i] += regret * (p1 if player == 0 else p0)
+			node.regretSum[i] += regret * (p1 if currentPlayer == 0 else p0)
 		return totalUtility
 
+	def getNextPlayer(self, history, roundCounter):
+		#Changes players to 0 if new round bb or pbb or pp
+		#Changes to player 2 if currentplayer is 0 and the 
+		#Bet passes are terminal so it won't matter
+		if roundCounter == 0:
+			return 1
+		else:
+			#pp or bb and any pass will make next player 0/terminal state
+			if history[-1] == "b":
+				if roundCounter == 1:
+					return 0
+				return 0
+			#only pass bet remains
+			else:
+				return 1
+			
+		
+	
+		
 	#returns the value of the game if it is terminal
 	#else returns None
 	def evaluateGame(self, history):
