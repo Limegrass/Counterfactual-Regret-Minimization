@@ -73,8 +73,12 @@ class PokerTrainer(object):
 			utility += self.cfr("", 1.0, 1.0, 0)
 		#Print Outcome/winnings and each individual percentage to performt hat action
 		print("Average utility: ", utility / iterations)
+		print("Strategy:")
 		for gameState in sorted(self.gameTree.keys()):
-			print(gameState, self.gameTree[gameState].getAverageStrategy())
+			print("State: %8s  Pass: %6.3f  Bet: %6.3f" % (gameState,
+		                                             self.gameTree[gameState].getAverageStrategy()[0],
+		    self.gameTree[gameState].getAverageStrategy()[1]))		
+
 
 	#Calculates one step of Counterfactual regret
 	def cfr(self, history, p0, p1, roundCounter):
