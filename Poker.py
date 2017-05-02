@@ -1,6 +1,7 @@
 import random
 PASS = 0
 BET = 1
+RERAISE = 2
 NUM_ACTIONS = 2
 KUHN_DECK = [1,2,3]
 LEDUC_DECK = [1,1,2,2,3,3]
@@ -98,7 +99,7 @@ class PokerTrainer(object):
 			
 			gameState = str(self.cards[currentPlayer]) + history
 		elif self.game == "leduc":
-			player = plays % 2 if plays <= 2 or history[:2] == "pp" or history[:2] == "bb" else 1 - plays % 2
+			#player = plays % 2 if plays <= 2 or history[:2] == "pp" or history[:2] == "bb" else 1 - plays % 2
 			if (plays > 2 and (history[:2] == "pp" or history[:2] == "bb")) or (plays > 3 and history[:3] == "pbb"):
 				gameState = str(self.cards[currentPlayer]) + str(self.cards[2]) + history
 			else:
@@ -113,15 +114,23 @@ class PokerTrainer(object):
 		else:
 			node = gameTreeNode(gameState)
 			self.gameTree[gameState] = node
-		#Tells what strategy to play
-		#0 if pass, else bet
+			
+		#Returns the percentage to reach the next strategy steps.
 		strategy = node.getStrategy(p0 if currentPlayer== 0 else p1)
 		utilities = [0.0] * NUM_ACTIONS
 		totalUtility = 0.0
 		for i in range(NUM_ACTIONS):
 			#Update history and recursive call to function to decide next step
-			nextHistory = history + ("p" if i == 0 else "b")
-			nextRoundCounter = roundCounter
+			nextHistory = history 
+			if i == PASS:
+				nextHistory += "p"
+			elif i == BET:
+				nextHistory += "b"
+ 			elif i == RERAISE and (roundCounter == 1 or roundCounter == 2) and history[-1]== "b":
+				nextHistory += "r"
+			else: 
+				continue
+			
 			#Use updated probability to reach the next game state
 			if currentPlayer == 0:
 				nextP0 = p0 * strategy[i]
@@ -130,9 +139,16 @@ class PokerTrainer(object):
 				nextP0 = p0 
 				nextP1 = p1 * strategy[i]
 
+			#Update the turn counter so we know the player
+			nextRoundCounter = roundCounter
 			if roundCounter == 0:
 				nextRoundCounter += 1
-			elif roundCounter == 1 and nextHistory == "pb":
+			elif roundCounter == 1:
+				if (i == PASS and history[-1] == "p") or nextHistory[-2:] == "bb":
+					nextRoundCounter = 0
+				else:
+					nextRoundCounter += 1
+			elif roundCounter == 2 and nextHistory[-1] == "r":
 				nextRoundCounter += 1
 			else:
 				nextRoundCounter = 0
@@ -208,48 +224,151 @@ class PokerTrainer(object):
 	#Returns the value of the play in Leduc Poker if it is a terminal state
 	def leducEval(self, history):
 		plays = len(history)
+		if plays < 2:
+			return None
 		if plays <= 2 or history[:2] == "pp" or history[:2] == "bb":
 			player = plays % 2
 			opponent = 1 - player
 		else:
 			opponent = plays % 2
 			player = 1 - opponent
+		
+		#Can increase performance with this method if I continue
+		#Terminal in round 1, so we can shortcircuit 
+		round1bp = (history[:2] == "bp")
+		round1pbp = (history[:3] == "pbp")
+		if(round1bp or round1pbp):
+			return 1
+		
+		round1brp = (history[:3] == "brp")
+		round1pbrp = (history[:4] == "pbrp")
+		if(round1brp or round1pbrp):
+			return 2
+		
+		#Not terminal in round 1
+		#Round 1 is just checks
+		round1pp = (history[:2] == "pp")
+		round1bb = False
+		round1br = False
+		round2startIndex = 2
+		round1pot = 1
+		#Round1 is a bet call
+		if not round1pp:
+			round1bb = (history[:2] == "bb") or (history[:3] == "pbb")
+			if(history[:3] == "pbb"):
+				round2startIndex = 3
+			round1pot = 2
+			if not round1bb:
+				round1br = (history[:3] == "brb") or (history[:4] == "pbrb")
+				if(history[:3] == "brb"):
+					round2startIndex = 3
+				#Only one nonterminal state left, 4
+				else:
+					round2startIndex = 4
+				round1pot = 4
+		
+		#Round 1 unfinished (eg only 1 move is done)
+		if not (round1pp or round1bb or round1br):
+			return None
+		
+				
+		round2History = history[round2startIndex:]
+		
+		round2Plays = len(round2History)
+		if plays - round2Plays < 2:
+			return None
+		
+		round2bp = (round2History == "bp")
+		round2pbp = (round2History == "pbp")
+		if(round2bp or round2pbp):
+			return round1pot
+		
+		round2brp = (round2History == "brp")
+		round2pbrp = (round2History == "pbrp")
+		if(round2brp or round2pbrp):
+			return 2*round1pot
+		
+		#Not terminal in round 1
+		#Round 1 is just checks
+		winner = (self.cards[player] == self.cards[2] or (self.cards[opponent] != self.cards[2] and self.cards[player] > self.cards[opponent]))
+		tie = self.cards[player] == self.cards[opponent]
+		if (round2History == "pp"):
+			if tie:
+				return 0
+			return round1pot if winner else -round1pot
+		
+		if (round2History == "bb") or (round2History == "pbb"):
+			if tie:
+				return 0
+			return 2*round1pot if winner else -2*round1pot
+		
 
-		passAfterBetRound1 = (history == "bp" or history == "pbp")
-		passAfterBetRound2Min = (history == "ppbp" or history == "pppbp")
-		passAfterPassRound2Min = history == "pppp"
+		if (round2History == "brb") or (round2History == "pbrb"):
+			if tie:
+				return 0
+			return 4*round1pot if winner else -4*round1pot
+		
+		
+		
+		
+		
+
+		
+		'''
+		#passAfterBetRound1 = (history == "bp" or history == "pbp")
+		#passAfterBetRound2Min = (history == "ppbp" or history == "pppbp")
+		#passAfterPassRound2Min = history == "pppp"
 		#lastActs = history[-2:]
 		#showdown = lastAct[0]==lastAct[1]
 		
-		passAfterBetRound2Max = (history == "pbbbp" or history == "bbbp" or history == "pbbpbp" or history == "bbpbp")
-		passAfterPassRound2Max = (history == "pbbpp" or history == "bbpp")
-		doubleBetRound2Min = (history == "pppbb" or history == "ppbb")
-		doubleBetRound2Max = (history == "pbbpbb" or history == "bbpbb" or history == "pbbbb" or history == "bbbb")
+		#passAfterBetRound2Max = (history == "pbbbp" or history == "bbbp" or history == "pbbpbp" or history == "bbpbp")
+		#passAfterPassRound2Max = (history == "pbbpp" or history == "bbpp")
+		#doubleBetRound2Min = (history == "pppbb" or history == "ppbb")
+		#doubleBetRound2Max = (history == "pbbpbb" or history == "bbpbb" or history == "pbbbb" or history == "bbbb")
+		
 		winner = (self.cards[player] == self.cards[2] or (self.cards[opponent] != self.cards[2] and self.cards[player] > self.cards[opponent]))
 		tie = self.cards[player] == self.cards[opponent]
 
-		if passAfterBetRound1:
+		#if (history == "bp" or history == "pbp"):
+			#return 1
+		#Pass after a bet or reraise with no previous call
+		if (history == "ppbp" or history == "pppbp") or (history == "bp" or history == "pbp"):
 			return 1
-		if passAfterBetRound2Min:
-			return 1
-		if passAfterBetRound2Max:
+		#Pass after bet with a call
+		if (history == "pbbbp" or history == "bbbp" or history == "pbbpbp" or history == "bbpbp"):
 			return 2
-		if passAfterPassRound2Min:
+		#All passes
+		if history == "pppp":
 			if tie:
 				return 0
 			return 1 if winner else -1
-		if passAfterPassRound2Max:
+		#Showdown with a call
+		if (history == "pbbpp" or history == "bbpp") or (history == "pppbb" or history == "ppbb"):
 			if tie:
 				return 0
 			return 2 if winner else -2
-		if doubleBetRound2Min:
-			if tie:
-				return 0
-			return 2 if winner else -2
-		if doubleBetRound2Max:
+		#Showdown with 2 calls
+		if (history == "pbbpbb" or history == "bbpbb" or history == "pbbbb" or history == "bbbb"):
 			if tie:
 				return 0
 			return 4 if winner else -4
+		
+		#Cases with reraises
+		#Reraised forces a fold with no calls
+		if (history == "brp" or history == "pbrp") or (history == "ppbrp" or history == "pppbrp"):
+			return 2
+		#Reraise forces a fold with a call
+		if (history == "bbbrp" or history == "pbbpbrp" or history == "brpbp" ):
+			return 4
+		#Showdown with a single reraise
+		if (history == "brbpp" or history == "pbrbpp" or history == "ppbrb" or history == "pppbrb"):
+			if tie:
+				return 0
+			return 4 if winner else -4
+		#unfinished, changed method to above
+		'''
+		
+		
 
 
 
@@ -257,9 +376,9 @@ class PokerTrainer(object):
 
 def main():
 	#Takes input of game type
-	trainer = PokerTrainer("kuhn") 
+	trainer = PokerTrainer("leduc") 
 	#Number of trials
-	trainer.train(100000)
+	trainer.train(1000000)
 
 if __name__ == "__main__":
 	main()
