@@ -2,7 +2,7 @@ import random
 PASS = 0
 BET = 1
 RERAISE = 2
-NUM_ACTIONS = 2
+NUM_ACTIONS = 3
 KUHN_DECK = [1,2,3]
 LEDUC_DECK = [1,1,2,2,3,3]
 
@@ -235,38 +235,34 @@ class PokerTrainer(object):
 		
 		#Can increase performance with this method if I continue
 		#Terminal in round 1, so we can shortcircuit 
-		round1bp = (history[:2] == "bp")
-		round1pbp = (history[:3] == "pbp")
-		if(round1bp or round1pbp):
+		round1bp = (history[:2] == "bp") or (history[:3] == "pbp")
+		if(round1bp):
 			return 1
 		
-		round1brp = (history[:3] == "brp")
-		round1pbrp = (history[:4] == "pbrp")
-		if(round1brp or round1pbrp):
+		round1brp = (history[:3] == "brp") or (history[:4] == "pbrp")
+		if(round1brp):
 			return 2
 		
 		#Not terminal in round 1
 		#Round 1 is just checks
 		round1pp = (history[:2] == "pp")
-		round1bb = False
-		round1br = False
+		round1bb = (history[:2] == "bb") or (history[:3] == "pbb")
+		round1br = (history[:3] == "brb") or (history[:4] == "pbrb")
 		round2startIndex = 2
 		round1pot = 1
 		#Round1 is a bet call
-		if not round1pp:
-			round1bb = (history[:2] == "bb") or (history[:3] == "pbb")
+		if round1bb:
 			if(history[:3] == "pbb"):
 				round2startIndex = 3
 			round1pot = 2
-			if not round1bb:
-				round1br = (history[:3] == "brb") or (history[:4] == "pbrb")
-				if(history[:3] == "brb"):
-					round2startIndex = 3
-				#Only one nonterminal state left, 4
-				else:
-					round2startIndex = 4
-				round1pot = 4
-		
+		elif round1br:
+			if(history[:3] == "brb"):
+				round2startIndex = 3
+			#Only one nonterminal state left, 4
+			else:
+				round2startIndex = 4
+			round1pot = 4
+	
 		#Round 1 unfinished (eg only 1 move is done)
 		if not (round1pp or round1bb or round1br):
 			return None
@@ -278,35 +274,39 @@ class PokerTrainer(object):
 		if plays - round2Plays < 2:
 			return None
 		
-		round2bp = (round2History == "bp")
-		round2pbp = (round2History == "pbp")
-		if(round2bp or round2pbp):
+		#Bet pass in round 2
+		round2bp = (round2History == "bp") or (round2History == "pbp")
+		if(round2bp):
 			return round1pot
 		
-		round2brp = (round2History == "brp")
-		round2pbrp = (round2History == "pbrp")
-		if(round2brp or round2pbrp):
+		#Bet raise pass in round 2
+		round2brp = (round2History == "brp") or (round2History == "pbrp")
+		if(round2brp):
 			return 2*round1pot
 		
-		#Not terminal in round 1
-		#Round 1 is just checks
 		winner = (self.cards[player] == self.cards[2] or (self.cards[opponent] != self.cards[2] and self.cards[player] > self.cards[opponent]))
 		tie = self.cards[player] == self.cards[opponent]
-		if (round2History == "pp"):
+		#Check to showdown
+		round2pp = (round2History == "pp")
+		round2bb = (round2History == "bb") or (round2History == "pbb")
+		round2br = (round2History == "brb") or (round2History == "pbrb")
+			
+		if round2pp: 
 			if tie:
 				return 0
 			return round1pot if winner else -round1pot
 		
-		if (round2History == "bb") or (round2History == "pbb"):
+		#Bet to showdown
+		if round2bb:
 			if tie:
 				return 0
-			return 2*round1pot if winner else -2*round1pot
+			return 2*round1pot if winner else -(2*round1pot)
 		
 
-		if (round2History == "brb") or (round2History == "pbrb"):
+		if round2br: 
 			if tie:
 				return 0
-			return 4*round1pot if winner else -4*round1pot
+			return 4*round1pot if winner else -(4*round1pot)
 		
 		
 		
