@@ -2,7 +2,7 @@ import random
 PASS = 0
 BET = 1
 RERAISE = 2
-NUM_ACTIONS = 3
+NUM_ACTIONS = 2
 KUHN_DECK = [1,2,3]
 LEDUC_DECK = [1,1,2,2,3,3]
 
@@ -76,9 +76,13 @@ class PokerTrainer(object):
 		print("Average utility: ", utility / iterations)
 		print("Strategy:")
 		for gameState in sorted(self.gameTree.keys()):
-			print("State: %8s  Pass: %6.3f  Bet: %6.3f" % (gameState,
-		                                             self.gameTree[gameState].getAverageStrategy()[0],
-		    self.gameTree[gameState].getAverageStrategy()[1]))		
+			averageStrategy = self.gameTree[gameState].getAverageStrategy()
+			print("State: %10s  Pass: %6.3f  Bet: %6.3f" % (gameState,
+			        averageStrategy[0], averageStrategy[1])),
+			if NUM_ACTIONS == 3:
+				print ("  Raise: %6.3f" % (averageStrategy[2]))
+			else:
+				print 
 
 
 	#Calculates one step of Counterfactual regret
@@ -100,7 +104,7 @@ class PokerTrainer(object):
 			gameState = str(self.cards[currentPlayer]) + history
 		elif self.game == "leduc":
 			#player = plays % 2 if plays <= 2 or history[:2] == "pp" or history[:2] == "bb" else 1 - plays % 2
-			if (plays > 2 and (history[:2] == "pp" or history[:2] == "bb")) or (plays > 3 and history[:3] == "pbb"):
+			if plays > 2 and (history[:2] == "pp" or history[:2] == "bb" or plays > 3 and history[:3] == "pbb" or history[:3] == "brb" or history[:4] == "pbrb"):
 				gameState = str(self.cards[currentPlayer]) + str(self.cards[2]) + history
 			else:
 				gameState = str(self.cards[currentPlayer]) + history
@@ -129,7 +133,7 @@ class PokerTrainer(object):
  			elif i == RERAISE and (roundCounter == 1 or roundCounter == 2) and history[-1]== "b":
 				nextHistory += "r"
 			else: 
-				continue
+				return 0
 			
 			#Use updated probability to reach the next game state
 			if currentPlayer == 0:
@@ -141,10 +145,14 @@ class PokerTrainer(object):
 
 			#Update the turn counter so we know the player
 			nextRoundCounter = roundCounter
-			if roundCounter == 0:
+			if  (nextHistory[-2:] == "pp" or nextHistory[-2:] == "bb" or nextHistory[-2:] == "rb") and roundCounter != 0:
+			#if (history[:3] == "pbb" or history[:3] =="brb"):
+				nextRoundCounter = 0
+			else:
 				nextRoundCounter += 1
+			'''
 			elif roundCounter == 1:
-				if (i == PASS and history[-1] == "p") or nextHistory[-2:] == "bb":
+				if (nextHistory[-2:] == "pp") or nextHistory[-2:] == "bb":
 					nextRoundCounter = 0
 				else:
 					nextRoundCounter += 1
@@ -153,6 +161,7 @@ class PokerTrainer(object):
 			else:
 				nextRoundCounter = 0
 				
+			'''
 			
 			utilities[i] = -self.cfr(nextHistory, nextP0, nextP1, nextRoundCounter)
 			
@@ -226,12 +235,6 @@ class PokerTrainer(object):
 		plays = len(history)
 		if plays < 2:
 			return None
-		if plays <= 2 or history[:2] == "pp" or history[:2] == "bb":
-			player = plays % 2
-			opponent = 1 - player
-		else:
-			opponent = plays % 2
-			player = 1 - opponent
 		
 		#Can increase performance with this method if I continue
 		#Terminal in round 1, so we can shortcircuit 
@@ -283,6 +286,9 @@ class PokerTrainer(object):
 		round2brp = (round2History == "brp") or (round2History == "pbrp")
 		if(round2brp):
 			return 2*round1pot
+		
+		player = round2Plays%2
+		opponent = 1-player
 		
 		winner = (self.cards[player] == self.cards[2] or (self.cards[opponent] != self.cards[2] and self.cards[player] > self.cards[opponent]))
 		tie = self.cards[player] == self.cards[opponent]
