@@ -150,18 +150,6 @@ class PokerTrainer(object):
 				nextRoundCounter = 0
 			else:
 				nextRoundCounter += 1
-			'''
-			elif roundCounter == 1:
-				if (nextHistory[-2:] == "pp") or nextHistory[-2:] == "bb":
-					nextRoundCounter = 0
-				else:
-					nextRoundCounter += 1
-			elif roundCounter == 2 and nextHistory[-1] == "r":
-				nextRoundCounter += 1
-			else:
-				nextRoundCounter = 0
-				
-			'''
 			
 			utilities[i] = -self.cfr(nextHistory, nextP0, nextP1, nextRoundCounter)
 			
@@ -173,26 +161,9 @@ class PokerTrainer(object):
 			#Regret for choosing that decision
 			node.regretSum[i] += regret * (p1 if currentPlayer == 0 else p0)
 		return totalUtility
-
-	def getNextPlayer(self, history, roundCounter):
-		#Changes players to 0 if new round bb or pbb or pp
-		#Changes to player 2 if currentplayer is 0 and the 
-		#Bet passes are terminal so it won't matter
-		if roundCounter == 0:
-			return 1
-		else:
-			#pp or bb and any pass will make next player 0/terminal state
-			if history[-1] == "b":
-				if roundCounter == 1:
-					return 0
-				return 0
-			#only pass bet remains
-			else:
-				return 1
-			
 		
 	
-		
+	
 	#returns the value of the game if it is terminal
 	#else returns None
 	def evaluateGame(self, history):
@@ -319,87 +290,14 @@ class PokerTrainer(object):
 		
 		
 
-		
-		'''
-		#passAfterBetRound1 = (history == "bp" or history == "pbp")
-		#passAfterBetRound2Min = (history == "ppbp" or history == "pppbp")
-		#passAfterPassRound2Min = history == "pppp"
-		#lastActs = history[-2:]
-		#showdown = lastAct[0]==lastAct[1]
-		
-		#passAfterBetRound2Max = (history == "pbbbp" or history == "bbbp" or history == "pbbpbp" or history == "bbpbp")
-		#passAfterPassRound2Max = (history == "pbbpp" or history == "bbpp")
-		#doubleBetRound2Min = (history == "pppbb" or history == "ppbb")
-		#doubleBetRound2Max = (history == "pbbpbb" or history == "bbpbb" or history == "pbbbb" or history == "bbbb")
-		
-		winner = (self.cards[player] == self.cards[2] or (self.cards[opponent] != self.cards[2] and self.cards[player] > self.cards[opponent]))
-		tie = self.cards[player] == self.cards[opponent]
-
-		#if (history == "bp" or history == "pbp"):
-			#return 1
-		#Pass after a bet or reraise with no previous call
-		if (history == "ppbp" or history == "pppbp") or (history == "bp" or history == "pbp"):
-			return 1
-		#Pass after bet with a call
-		if (history == "pbbbp" or history == "bbbp" or history == "pbbpbp" or history == "bbpbp"):
-			return 2
-		#All passes
-		if history == "pppp":
-			if tie:
-				return 0
-			return 1 if winner else -1
-		#Showdown with a call
-		if (history == "pbbpp" or history == "bbpp") or (history == "pppbb" or history == "ppbb"):
-			if tie:
-				return 0
-			return 2 if winner else -2
-		#Showdown with 2 calls
-		if (history == "pbbpbb" or history == "bbpbb" or history == "pbbbb" or history == "bbbb"):
-			if tie:
-				return 0
-			return 4 if winner else -4
-		
-		#Cases with reraises
-		#Reraised forces a fold with no calls
-		if (history == "brp" or history == "pbrp") or (history == "ppbrp" or history == "pppbrp"):
-			return 2
-		#Reraise forces a fold with a call
-		if (history == "bbbrp" or history == "pbbpbrp" or history == "brpbp" ):
-			return 4
-		#Showdown with a single reraise
-		if (history == "brbpp" or history == "pbrbpp" or history == "ppbrb" or history == "pppbrb"):
-			if tie:
-				return 0
-			return 4 if winner else -4
-		#unfinished, changed method to above
-		'''
-		
-		
-
-
 
 
 
 def main():
 	#Takes input of game type
-	trainer = PokerTrainer("leduc") 
+	trainer = PokerTrainer("kuhn") 
 	#Number of trials
 	trainer.train(1000000)
 
 if __name__ == "__main__":
 	main()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
