@@ -8,21 +8,21 @@ import random
 
 def main():
 	#Dictionary of pass percentage
-	cfrmStrategy = {}
-	cfrmStrategy['1'] = .765
-	cfrmStrategy['1b'] =  1.0
-	cfrmStrategy['1p'] =  0.668
-	cfrmStrategy['1pb'] =  1.0
+	cfrmKuhnStrategy = {}
+	cfrmKuhnStrategy['1'] = .765
+	cfrmKuhnStrategy['1b'] =  1.0
+	cfrmKuhnStrategy['1p'] =  0.668
+	cfrmKuhnStrategy['1pb'] =  1.0
 	
-	cfrmStrategy['2'] =  1.0
-	cfrmStrategy['2b'] =  0.666
-	cfrmStrategy['2p'] =  1.0
-	cfrmStrategy['2pb'] =  0.431
+	cfrmKuhnStrategy['2'] =  1.0
+	cfrmKuhnStrategy['2b'] =  0.666
+	cfrmKuhnStrategy['2p'] =  1.0
+	cfrmKuhnStrategy['2pb'] =  0.431
 	
-	cfrmStrategy['3'] =  0.289
-	cfrmStrategy['3b'] =  0.0
-	cfrmStrategy['3p'] =  0.0
-	cfrmStrategy['3pb'] =  0.0
+	cfrmKuhnStrategy['3'] =  0.289
+	cfrmKuhnStrategy['3b'] =  0.0
+	cfrmKuhnStrategy['3p'] =  0.0
+	cfrmKuhnStrategy['3pb'] =  0.0
 	
 	playerStrategy = {}
 	
@@ -82,9 +82,9 @@ def main():
 							yourInfo += "b"
 					else:
 						cpuChoice = random.random()
-						#print cpuChoice, " ", cfrmStrategy[cpuInfo]
+						#print cpuChoice, " ", cfrmKuhnStrategy[cpuInfo]
 						
-						if cpuChoice > cfrmStrategy[cpuInfo]:
+						if cpuChoice > cfrmKuhnStrategy[cpuInfo]:
 							cpuInfo += "b"
 							yourInfo += "b"
 						else:
@@ -103,25 +103,31 @@ def main():
 				print "\n"
 			else:
 				if plays == "Nash":
-					playerStrategy = cfrmStrategy
+					playerStrategy = cfrmKuhnStrategy
 					plays = raw_input("Type number of iterations: ")
 					
 				else:
-					playerStrategy['1'] = float(raw_input("Enter the percentage you wish to pass seeing a 1: "))
-					playerStrategy['1b'] = float(raw_input("Enter the percentage you wish to pass seeing a 1b: "))
-					playerStrategy['1p'] = float(raw_input("Enter the percentage you wish to pass seeing a 1p: "))
-					playerStrategy['1pb'] = float(raw_input("Enter the percentage you wish to pass seeing a 1pb: "))
+					for state in sorted(list(cfrmKuhnStrategy.keys())):
+						print "Enter the percentage you wish to pass seeing a", state,": ",
+						playerStrategy[state] = float(raw_input())
+						'''
+						playerStrategy['1'] = float(raw_input("Enter the percentage you wish to pass seeing a 1: "))
+						playerStrategy['1b'] = float(raw_input("Enter the percentage you wish to pass seeing a 1b: "))
+						playerStrategy['1p'] = float(raw_input("Enter the percentage you wish to pass seeing a 1p: "))
+						playerStrategy['1pb'] = float(raw_input("Enter the percentage you wish to pass seeing a 1pb: "))
+						
+						playerStrategy['2'] =  float(raw_input("Enter the percentage you wish to pass seeing a 2: "))
+						playerStrategy['2b'] = float(raw_input("Enter the percentage you wish to pass seeing a 2b: "))
+						playerStrategy['2p'] = float(raw_input("Enter the percentage you wish to pass seeing a 2p: "))
+						playerStrategy['2pb'] = float(raw_input("Enter the percentage you wish to pass seeing a 2pb: "))
+						
+						playerStrategy['3'] = float(raw_input("Enter the percentage you wish to pass seeing a 3: "))
+						playerStrategy['3b'] = float(raw_input("Enter the percentage you wish to pass seeing a 3b: "))
+						playerStrategy['3p'] = float(raw_input("Enter the percentage you wish to pass seeing a 3p: "))
+						playerStrategy['3pb'] = float(raw_input("Enter the percentage you wish to pass seeing a 3pb: "))
 					
-					playerStrategy['2'] =  float(raw_input("Enter the percentage you wish to pass seeing a 2: "))
-					playerStrategy['2b'] = float(raw_input("Enter the percentage you wish to pass seeing a 2b: "))
-					playerStrategy['2p'] = float(raw_input("Enter the percentage you wish to pass seeing a 2p: "))
-					playerStrategy['2pb'] = float(raw_input("Enter the percentage you wish to pass seeing a 2pb: "))
-					
-					playerStrategy['3'] = float(raw_input("Enter the percentage you wish to pass seeing a 3: "))
-					playerStrategy['3b'] = float(raw_input("Enter the percentage you wish to pass seeing a 3b: "))
-					playerStrategy['3p'] = float(raw_input("Enter the percentage you wish to pass seeing a 3p: "))
-					playerStrategy['3pb'] = float(raw_input("Enter the percentage you wish to pass seeing a 3pb: "))
-					
+						'''
+						
 				for i in range(int(plays)):
 					random.shuffle(KUHN_DECK)
 					yourInfo = str(KUHN_DECK[PLAYER])
@@ -139,7 +145,7 @@ def main():
 
 						else:
 							cpuChoice = random.random()
-							if random.random() > cfrmStrategy[cpuInfo]:
+							if random.random() > cfrmKuhnStrategy[cpuInfo]:
 								cpuInfo += "b"
 								yourInfo += "b"
 							else:
