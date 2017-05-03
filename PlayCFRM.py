@@ -48,6 +48,12 @@ def main():
 			)			
 
 			if plays == "0":
+				print "==========================================================="
+				print "\tYou played", int(handsPlayed), "hands."
+				print "\tYour lifetime total earnings was: ", totalGain
+				if(handsPlayed > 0.0):
+					print "\tYour lifetime average earnings was: ", totalGain/handsPlayed
+				print "==========================================================="
 				break
 			elif plays == "s":
 				PLAYER = CPU
@@ -124,7 +130,7 @@ def main():
 							try:
 								playerStrategy[state] = float(raw_input())
 							except:
-								print "Please enter a positive deicmal number."
+								print "Please enter a positive deicmal number: ",
 						
 				for i in range(int(plays)):
 					random.shuffle(KUHN_DECK)
