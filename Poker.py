@@ -75,7 +75,7 @@ class PokerTrainer(object):
             random.shuffle(self.cards)
             #Adds utiity gained after evaluation?
             #The 1.0 are probability to play by the CFR Measurement?
-            utility += self.cfr("", 1.0, 1.0, 0)
+            utility += self.cfr("", 1.0, 1.0, 0, False)
             #print utility
         #Print Outcome/winnings and each individual percentage to performt hat action
         print "Iterations:", iterations
@@ -95,7 +95,7 @@ class PokerTrainer(object):
 
 
     #Calculates one step of Counterfactual regret
-    def cfr(self, history, p0, p1, roundCounter):
+    def cfr(self, history, p0, p1, roundCounter, stage2):
         #Finds number result of utility gained for play
         result = self.evaluateGame(history)
         plays = len(history)
@@ -115,10 +115,13 @@ class PokerTrainer(object):
             gameState = str(self.cards[currentPlayer]) + history
         elif self.game == "leduc":
             #player = plays % 2 if plays <= 2 or history[:2] == "pp" or history[:2] == "bb" else 1 - plays % 2
-            if plays > 2 and (history[:2] == "pp" or history[:2] == "bb" or plays > 3 and history[:3] == "pbb" or history[:3] == "brb" or history[:4] == "pbrb"):
-                gameState = str(self.cards[currentPlayer]) + str(self.cards[2]) + history
-            else:
+            if not stage2:
                 gameState = str(self.cards[currentPlayer]) + history
+            else:
+            #if plays > 2 and (history[:2] == "pp" or history[:2] == "bb" or plays > 3 and history[:3] == "pbb" or history[:3] == "brb" or history[:4] == "pbrb"):
+                gameState = str(self.cards[currentPlayer]) + str(self.cards[2]) + history
+            #else:
+                #gameState = str(self.cards[currentPlayer]) + history
 
 
 
@@ -142,6 +145,7 @@ class PokerTrainer(object):
         for i in range(actions):
             #Update history and recursive call to function to decide next step
             nextHistory = history 
+            nextStage = stage2
             if i == PASS:
                 nextHistory += "p"
             elif i == BET:
@@ -169,7 +173,9 @@ class PokerTrainer(object):
 
 
 
-            utilities[i] = -self.cfr(nextHistory, nextP0, nextP1, nextRoundCounter)
+            if nextRoundCounter == 0:
+                nextStage = True
+            utilities[i] = -self.cfr(nextHistory, nextP0, nextP1, nextRoundCounter, nextStage)
 
             #Sum resulting utility for each strategy
             totalUtility += utilities[i] * strategy[i]
@@ -323,7 +329,7 @@ def main():
     #Takes input of game type
     trainer = PokerTrainer("leduc") 
     #Number of trials
-    trainer.train(1000)
+    trainer.train(100000)
 
 if __name__ == "__main__":
     main()
