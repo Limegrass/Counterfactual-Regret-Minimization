@@ -2,7 +2,7 @@ import random
 PASS = 0
 BET = 1
 RERAISE = 2
-NUM_ACTIONS = 2
+NUM_ACTIONS = 3
 KUHN_DECK = [1,2,3]
 LEDUC_DECK = [1,1,2,2,3,3]
 
@@ -15,39 +15,40 @@ class gameTreeNode(object):
 	strategySum - Total strategy for each action accumulated over iterations
 
 	"""
-	def __init__(self, gameState = ""):
+	def __init__(self, gameState, numChoices):
 		self.gameState = gameState
-		self.regretSum = [0.0] * NUM_ACTIONS
-		self.strategy = [0.0] * NUM_ACTIONS
-		self.strategySum = [0.0] * NUM_ACTIONS
+		self.actions = numChoices
+		self.regretSum = [0.0] * numChoices
+		self.strategy = [0.0] * numChoices
+		self.strategySum = [0.0] * numChoices
 
 	#Returns the least regretful strategy as defined by cfr
 	def getStrategy(self, probability):
 		sum = 0
 		#Sum all positive strategies
-		for i in range(NUM_ACTIONS):
+		for i in range(self.actions):
 			self.strategy[i] = self.regretSum[i] if self.regretSum[i] > 0 else 0
 			sum += self.strategy[i]
 		#Gives percentage to do one strategy over the other
-		for i in range(NUM_ACTIONS):
+		for i in range(self.actions):
 			if sum > 0:
 				self.strategy[i] /= sum
 			else:
-				self.strategy[i] = 1.0 / NUM_ACTIONS
+				self.strategy[i] = 1.0 / self.actions
 			#probability = percentage chance to reach this game state
 			self.strategySum[i] += self.strategy[i] * probability
 		return self.strategy
 
 	def getAverageStrategy(self):
-		averageStrategy = [0.0] * NUM_ACTIONS
+		averageStrategy = [0.0] * self.actions
 		sum = 0
-		for i in range(NUM_ACTIONS):
+		for i in range(self.actions):
 			sum += self.strategySum[i]
-		for i in range(NUM_ACTIONS):
+		for i in range(self.actions):
 			if sum > 0:
 				averageStrategy[i] = self.strategySum[i] / sum
 			else:
-				averageStrategy[i] = 1.0 / NUM_ACTIONS
+				averageStrategy[i] = 1.0 / self.actions
 		return averageStrategy
 
 class PokerTrainer(object):
@@ -77,12 +78,15 @@ class PokerTrainer(object):
 		print("Strategy:")
 		for gameState in sorted(self.gameTree.keys()):
 			averageStrategy = self.gameTree[gameState].getAverageStrategy()
-			print("State: %10s  Pass: %6.3f  Bet: %6.3f" % (gameState,
-			        averageStrategy[0], averageStrategy[1])),
-			if NUM_ACTIONS == 3:
-				print ("  Raise: %6.3f" % (averageStrategy[2]))
-			else:
-				print 
+			print("State: %10s" % (gameState)),
+			for i in range(len(averageStrategy)):
+				if i == PASS:
+					print ("  Pass: %6.3f" % (averageStrategy[i])),
+				if i == BET:
+					print ("  Bet: %6.3f" % (averageStrategy[i])),
+				if i == RERAISE:
+					print ("  Raise: %6.3f" % (averageStrategy[i])),
+			print
 
 
 	#Calculates one step of Counterfactual regret
@@ -116,7 +120,10 @@ class PokerTrainer(object):
 			node = self.gameTree[gameState]
 		#Else create the state for the current game state
 		else:
-			node = gameTreeNode(gameState)
+			if (roundCounter == 1 or roundCounter == 2) and history[-1]== "b":
+				node = gameTreeNode(gameState, NUM_ACTIONS)
+			else:
+				node = gameTreeNode(gameState, 2)
 			self.gameTree[gameState] = node
 			
 		#Returns the percentage to reach the next strategy steps.
@@ -295,9 +302,9 @@ class PokerTrainer(object):
 
 def main():
 	#Takes input of game type
-	trainer = PokerTrainer("kuhn") 
+	trainer = PokerTrainer("leduc") 
 	#Number of trials
-	trainer.train(1000000)
+	trainer.train(10000)
 
 if __name__ == "__main__":
 	main()

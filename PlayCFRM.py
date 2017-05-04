@@ -3,13 +3,14 @@ PASS = "1"
 BET = "2"
 import sys
 import random
+import os
 
 def main():
 	#Dictionary of pass percentage
 	cfrmKuhnStrategy = {}
 	cfrmKuhnStrategy['1'] = .765
 	cfrmKuhnStrategy['1b'] =  1.0
-	cfrmKuhnStrategy['1p'] =  0.668
+	cfrmKuhnStrategy['1p'] =  0.666
 	cfrmKuhnStrategy['1pb'] =  1.0
 	
 	cfrmKuhnStrategy['2'] =  1.0
@@ -41,24 +42,23 @@ def main():
 				print "Average Earnings: ", totalGain/handsPlayed
 			
 			plays = raw_input(
-			"Type: 0 to start over, 1 to play a single hands,\n"
-			"or type the number of hands to play a mixed strategy\n"
-			"To self-play, type \"Nash\", to switch playing order, type s\n"
-			"\tInput: "
+			"Menu:\n\t0: Reset stats\n\t1: Play a single hand"
+			"\n\t2: Simulate mixed strategy"
+			"\n\t3: Simulate Nash equilibrium strategy"
+			"\n\t4: Switch playing order\n"
+			"\nInput: "
 			)			
+			os.system('cls' if os.name == 'nt' else 'clear')
 
 			if plays == "0":
 				print "==========================================================="
-				print "\tYou played", int(handsPlayed), "hands."
+				print "\tYou played", int(handsPlayed), "hand(s)."
 				print "\tYour lifetime total earnings was: ", totalGain
 				if(handsPlayed > 0.0):
 					print "\tYour lifetime average earnings was: ", totalGain/handsPlayed
 				print "==========================================================="
 				break
-			elif plays == "s":
-				PLAYER = CPU
-				CPU = 1-PLAYER
-				continue
+
 			elif plays == "1":
 				while True:
 					print "Total Earnings: ", totalGain
@@ -68,7 +68,7 @@ def main():
 						print "Average Earnings: ", totalGain/handsPlayed
 					random.shuffle(KUHN_DECK)
 					yourInfo = str(KUHN_DECK[PLAYER])
-					print "\tYou have a", yourInfo
+					print "You have a", yourInfo
 					cpuInfo = str(KUHN_DECK[CPU])
 					roundCounter = 0
 					while kuhnEval(cpuInfo, PLAYER, CPU) is None and kuhnEval(yourInfo, PLAYER, CPU) is None:
@@ -77,13 +77,13 @@ def main():
 								pass
 							else:
 								if yourInfo[-1] == "b":
-									print "\tYour opponent has bet! \n\tWhat will you do?"
+									print "our opponent has bet! \nWhat will you do?"
 								else: 
-									print "\tYour opponent has check/called! \nWhat will you do?"
+									print "Your opponent has check/called! \nWhat will you do?"
 							#Easier to input with 1 and 2 rather than pb
 							decision = raw_input(
 							"\tType 1 to check/fold or 2 to bet/call,\n\tq to quit single play\n"#, or s to switch sides\n"
-							"\t\tInput: "
+							"Input: "
 							)
 							if decision == "q":
 								break
@@ -107,31 +107,81 @@ def main():
 						roundCounter += 1
 					if decision == "q":
 						break
-					print "\tYou saw", yourInfo
-					print "\tYour opponent had a", KUHN_DECK[CPU]
+					print
+					print "You saw", yourInfo
+					print "Your opponent had a", KUHN_DECK[CPU]
 					earnings = kuhnEval(yourInfo, PLAYER, CPU) 
+					print "Change in your earnings:", earnings
 					totalGain += earnings
 					handsPlayed += 1.0
-					print "\n"
-			else:
+					temp = raw_input("Press enter for the next hand")
+					#Comment the next time to see full history
+					os.system('cls' if os.name == 'nt' else 'clear')
+				os.system('cls' if os.name == 'nt' else 'clear')
+			elif plays == "2":
+				localGain = 0.0
+				localHands = 0.0
 				playerStrategy = {}
-				if str.lower(plays) == "nash":
-					playerStrategy = cfrmKuhnStrategy
-					plays = int(raw_input("Type number of iterations: "))
-				else:
-					try:
-						plays = int(plays)
-					except:
-						print "Please type a valid choice!"
-						continue
-					for state in sorted(list(cfrmKuhnStrategy.keys())):
-						print "Enter the percentage you wish to pass seeing a", state,": ",
-						while state not in playerStrategy:
-							try:
-								playerStrategy[state] = float(raw_input())
-							except:
-								print "Please enter a positive deicmal number: ",
-						
+				try:
+					plays = int(raw_input("Enter number of interations: "))
+				except:
+					print "Please enter an positive integer"
+					continue
+				
+				for state in sorted(list(cfrmKuhnStrategy.keys())):
+					print "Enter the percentage [0.0, 1.0] you wish to pass seeing a", state,": ",
+					while state not in playerStrategy:
+						try:
+							playerStrategy[state] = float(raw_input())
+						except:
+							print "Please enter a positive deicmal number: ",
+							
+				print "Running simulation..."
+				for i in range(int(plays)):
+					random.shuffle(KUHN_DECK)
+					yourInfo = str(KUHN_DECK[PLAYER])
+					cpuInfo = str(KUHN_DECK[CPU])
+					roundCounter = 0
+					while kuhnEval(cpuInfo, PLAYER, CPU) is None and kuhnEval(yourInfo, PLAYER, CPU) is None:
+						if roundCounter%2 == PLAYER:
+							if random.random() > playerStrategy[yourInfo]:
+								cpuInfo += "b"
+								yourInfo += "b"
+							else:
+								cpuInfo += "p"
+								yourInfo += "p"
+							
+
+						else:
+							cpuChoice = random.random()
+							if random.random() > cfrmKuhnStrategy[cpuInfo]:
+								cpuInfo += "b"
+								yourInfo += "b"
+							else:
+								cpuInfo += "p"
+								yourInfo += "p"
+						roundCounter += 1
+					
+					earnings = kuhnEval(yourInfo, PLAYER, CPU)
+					totalGain += earnings
+					localGain += earnings
+					localHands += 1.0
+					handsPlayed += 1.0
+				os.system('cls' if os.name == 'nt' else 'clear')
+				print "That strategy netted: ", localGain, "over", localHands, "hands"
+				print "With an average earning of", localGain/localHands, "per hand"
+				print
+				
+			elif plays == "3":
+				playerStrategy = cfrmKuhnStrategy
+				try:
+					plays = int(raw_input("Enter number of interations: "))
+				except:
+					print "Please enter an positive integer"
+					continue
+				localGain = 0.0
+				localHands = 0.0
+				print "Running simulation..."
 				for i in range(int(plays)):
 					random.shuffle(KUHN_DECK)
 					yourInfo = str(KUHN_DECK[PLAYER])
@@ -159,9 +209,18 @@ def main():
 
 					earnings = kuhnEval(yourInfo, PLAYER, CPU)
 					totalGain += earnings
+					localGain += earnings
+					localHands += 1.0
 					handsPlayed += 1.0
-				
-			
+				os.system('cls' if os.name == 'nt' else 'clear')
+				print "That strategy netted: ", localGain, "over", localHands, "hands"
+				print "With an average earning of", localGain/localHands, "per hand"
+				print
+			elif plays == "4":
+				PLAYER = CPU
+				CPU = 1-PLAYER
+			else: 
+				print "Please enter a valid input."
 def kuhnEval(history, PLAYER, CPU):
 	#Defines the player and opponent for current turn
 	plays = len(history)
