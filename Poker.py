@@ -78,18 +78,18 @@ class PokerTrainer(object):
             utility += self.cfr("", 1.0, 1.0, 0)
             #print utility
         #Print Outcome/winnings and each individual percentage to performt hat action
+        print "Iterations:", iterations
         print("Average utility: ", utility / iterations)
         print("Strategy:")
         for gameState in sorted(self.gameTree.keys()):
             averageStrategy = self.gameTree[gameState].getAverageStrategy()
-            print("State: %10s" % (gameState)),
             for i in range(len(averageStrategy)):
                 if i == PASS:
-                    print ("  Pass: %6.3f" % (averageStrategy[i])),
+                    sys.stdout.write("Pass: " + "%6.3f" % (averageStrategy[i]) + "\t\t"),
                 if i == BET:
-                    print ("  Bet: %6.3f" % (averageStrategy[i])),
+                    sys.stdout.write("Bet: " +  "%6.3f" % (averageStrategy[i]) + " \t\t"),
                 if i == RERAISE:
-                    print ("  Raise: %6.3f" % (averageStrategy[i])),
+                    sys.stdout.write("Raise: " + "%6.3f" % (averageStrategy[i]) + "\t\t"),
             print
 
 
@@ -322,7 +322,7 @@ def main():
     #Takes input of game type
     trainer = PokerTrainer("leduc") 
     #Number of trials
-    trainer.train(1000000)
+    trainer.train(1000)
 
 if __name__ == "__main__":
     main()
