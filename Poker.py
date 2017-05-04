@@ -3,6 +3,8 @@ import sys
 PASS = 0
 BET = 1
 RERAISE = 2
+#Change NUM_ACTIONS to 2 if no reraises allowed
+#NUM_ACTIONS = 3
 NUM_ACTIONS = 3
 KUHN_DECK = [1,2,3]
 LEDUC_DECK = [1,1,2,2,3,3]
@@ -74,6 +76,7 @@ class PokerTrainer(object):
 			#Adds utiity gained after evaluation?
 			#The 1.0 are probability to play by the CFR Measurement?
 			utility += self.cfr("", 1.0, 1.0, 0)
+			#print utility
 		#Print Outcome/winnings and each individual percentage to performt hat action
 		print("Average utility: ", utility / iterations)
 		print("Strategy:")
@@ -96,8 +99,10 @@ class PokerTrainer(object):
 		result = self.evaluateGame(history)
 		plays = len(history)
 		currentPlayer = roundCounter%2
+		#print history, "", currentPlayer
 		
 		#If it was a terminal state, return the result
+		
 		if not result is None:
 			return result
 		
@@ -115,33 +120,34 @@ class PokerTrainer(object):
 				gameState = str(self.cards[currentPlayer]) + history
 
 
+
 		#If the current game state has already existed
 		#Then create a pointer to the node for the same state
+		actions = 2
 		if gameState in self.gameTree:
 			node = self.gameTree[gameState]
 		#Else create the state for the current game state
 		else:
 			if (roundCounter == 1 or roundCounter == 2) and history[-1]== "b":
-				node = gameTreeNode(gameState, NUM_ACTIONS)
-			else:
-				node = gameTreeNode(gameState, 2)
-			self.gameTree[gameState] = node
+				actions = NUM_ACTIONS
+			node = gameTreeNode(gameState, actions)
+		utilities = [0.0] * actions
+		self.gameTree[gameState] = node
 			
 		#Returns the percentage to reach the next strategy steps.
-		strategy = node.getStrategy(p0 if currentPlayer== 0 else p1)
-		utilities = [0.0] * NUM_ACTIONS
+		strategy = node.getStrategy(p0 if currentPlayer == 0 else p1)
 		totalUtility = 0.0
-		for i in range(NUM_ACTIONS):
+		for i in range(actions):
 			#Update history and recursive call to function to decide next step
 			nextHistory = history 
 			if i == PASS:
 				nextHistory += "p"
 			elif i == BET:
 				nextHistory += "b"
- 			elif i == RERAISE and (roundCounter == 1 or roundCounter == 2) and history[-1]== "b":
+ 			elif i == RERAISE:
 				nextHistory += "r"
 			else: 
-				return 0
+				return None
 			
 			#Use updated probability to reach the next game state
 			if currentPlayer == 0:
@@ -159,11 +165,13 @@ class PokerTrainer(object):
 			else:
 				nextRoundCounter += 1
 			
+			
+			
 			utilities[i] = -self.cfr(nextHistory, nextP0, nextP1, nextRoundCounter)
 			
 			#Sum resulting utility for each strategy
 			totalUtility += utilities[i] * strategy[i]
-		for i in range(NUM_ACTIONS):
+		for i in range(actions):
 			#Diff between gain for an action vs total possible gain?
 			regret = utilities[i] - totalUtility
 			#Regret for choosing that decision
@@ -305,7 +313,7 @@ def main():
 	#Takes input of game type
 	trainer = PokerTrainer("leduc") 
 	#Number of trials
-	trainer.train(10000)
+	trainer.train(100000)
 
 if __name__ == "__main__":
 	main()
