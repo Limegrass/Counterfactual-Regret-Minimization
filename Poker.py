@@ -6,13 +6,7 @@ KUHN_DECK = [1,2,3]
 LEDUC_DECK = [1,1,2,2,3,3]
 
 class gameTreeNode(object):
-  """
-  gameState - Players card and history of actions taken
-  regretSum - Total regret for not selecting move in prior instances of gameState
-  strategy - Actions weighted by normalized positive regretSum
-  strategySum - Total strategy for each action accumulated over iterations
 
-  """
   def __init__(self, gameState = ""):
     self.gameState = gameState
     self.regretSum = [0.0] * NUM_ACTIONS
@@ -55,7 +49,9 @@ class PokerTrainer(object):
     for _ in range(iterations):
       random.shuffle(self.cards)
       utility += self.cfr("", 1.0, 1.0)
-    print("Average utility: ", utility / iterations)
+      if _ % 10000 == 0:
+        print("%d,%f" % (_, utility / (_+1)))
+    print("Average utility: %f" % (utility / iterations))
     print("Strategy:")
     for gameState in sorted(self.gameTree.keys()):
       print("State: %8s  Pass: %6.3f  Bet: %6.3f" % (gameState,
@@ -157,18 +153,7 @@ class PokerTrainer(object):
 
 def main():
   trainer = PokerTrainer("kuhn")
-  trainer.train(1000000)
+  trainer.train(1000001)
 
 if __name__ == "__main__":
   main()
-
-
-
-
-
-
-
-
-
-
-
