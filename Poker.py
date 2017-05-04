@@ -83,6 +83,7 @@ class PokerTrainer(object):
         print("Strategy:")
         for gameState in sorted(self.gameTree.keys()):
             averageStrategy = self.gameTree[gameState].getAverageStrategy()
+            sys.stdout.write("State:" + "%10s"%gameState + "\t\t")
             for i in range(len(averageStrategy)):
                 if i == PASS:
                     sys.stdout.write("Pass: " + "%6.3f" % (averageStrategy[i]) + "\t\t"),
