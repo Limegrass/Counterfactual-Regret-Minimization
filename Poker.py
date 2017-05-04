@@ -124,12 +124,13 @@ class PokerTrainer(object):
 		#If the current game state has already existed
 		#Then create a pointer to the node for the same state
 		actions = 2
+		if (roundCounter == 1 or roundCounter == 2) and history[-1]== "b":
+			actions = NUM_ACTIONS
 		if gameState in self.gameTree:
 			node = self.gameTree[gameState]
 		#Else create the state for the current game state
 		else:
-			if (roundCounter == 1 or roundCounter == 2) and history[-1]== "b":
-				actions = NUM_ACTIONS
+
 			node = gameTreeNode(gameState, actions)
 		utilities = [0.0] * actions
 		self.gameTree[gameState] = node
@@ -176,6 +177,7 @@ class PokerTrainer(object):
 			regret = utilities[i] - totalUtility
 			#Regret for choosing that decision
 			node.regretSum[i] += regret * (p1 if currentPlayer == 0 else p0)
+
 		return totalUtility
 		
 	
