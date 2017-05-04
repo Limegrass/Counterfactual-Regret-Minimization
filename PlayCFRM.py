@@ -129,7 +129,7 @@ def main():
 					continue
 				
 				for state in sorted(list(cfrmKuhnStrategy.keys())):
-					print "Enter the percentage [0.0, 1.0] you wish to pass seeing a", state,": ",
+					print "Enter the percentage [0.0, 1.0] you wish to bet seeing a", state,": ",
 					while state not in playerStrategy:
 						try:
 							playerStrategy[state] = float(raw_input())
@@ -144,7 +144,7 @@ def main():
 					roundCounter = 0
 					while kuhnEval(cpuInfo, PLAYER, CPU) is None and kuhnEval(yourInfo, PLAYER, CPU) is None:
 						if roundCounter%2 == PLAYER:
-							if random.random() > playerStrategy[yourInfo]:
+							if random.random() < playerStrategy[yourInfo]:
 								cpuInfo += "b"
 								yourInfo += "b"
 							else:
