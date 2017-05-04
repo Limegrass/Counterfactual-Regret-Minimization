@@ -32,6 +32,15 @@ def main():
         CPU = 1-PLAYER
         while True:
             os.system('clear')
+            print "=================================================="
+            print " _  __     _             _____      _             "
+            print "| |/ /    | |           |  __ \    | |            "
+            print "| ' /_   _| |__  _ __   | |__) |__ | | _____ _ __ "
+            print "|  <| | | | '_ \| '_ \  |  ___/ _ \| |/ / _ \ '__|"
+            print "| . \ |_| | | | | | | | | |  | (_) |   <  __/ |   "
+            print "|_|\_\__,_|_| |_|_| |_| |_|   \___/|_|\_\___|_|   "
+            print "=================================================="                                                  
+
             if PLAYER == 0:
                 print "You are Player 1!"
             else:
@@ -74,9 +83,9 @@ def main():
                                 pass
                             else:
                                 if yourInfo[-1] == "b":
-                                    print "Your opponent has bet! \nWhat will you do?"
+                                    print "\nYour opponent has bet! \nWhat will you do?"
                                 else: 
-                                    print "Your opponent has passed! \nWhat will you do?"
+                                    print "\nYour opponent has passed! \nWhat will you do?"
                             #Easier to input with 1 and 2 rather than pb
                             decision = raw_input(
                             "Menu:"
@@ -124,6 +133,8 @@ def main():
                 playerStrategy = {}
                 try:
                     plays = int(raw_input("Enter number of interations: "))
+                    if plays < 1:
+                    	break
                 except:
                     print "Please enter an positive integer"
                     continue
