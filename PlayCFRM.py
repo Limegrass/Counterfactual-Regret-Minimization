@@ -6,6 +6,8 @@ import random
 import os
 
 def main():
+	
+	os.system('cls' if os.name == 'nt' else 'clear')
 	#Dictionary of pass percentage
 	cfrmKuhnStrategy = {}
 	cfrmKuhnStrategy['1'] = .765
@@ -29,6 +31,7 @@ def main():
 		handsPlayed = 0.0
 		PLAYER = 0
 		CPU = 1-PLAYER
+		mode = ""
 		while True:
 			if PLAYER == 0:
 				print "You play first every round!"
@@ -41,16 +44,18 @@ def main():
 				print "Hands played: ", int(handsPlayed)
 				print "Average Earnings: ", totalGain/handsPlayed
 			
-			plays = raw_input(
-			"Menu:\n\t0: Reset stats\n\t1: Play a single hand"
-			"\n\t2: Simulate mixed strategy"
-			"\n\t3: Simulate Nash equilibrium strategy"
-			"\n\t4: Switch playing order\n"
-			"\nInput: "
+			mode = raw_input(
+			"Menu:\n\t0: Reset stats"
+			"\n\t1: Switch playing order"
+			"\n\t2: Play a single hand"
+			"\n\t3: Simulate mixed strategy"
+			"\n\t4: Simulate Nash equilibrium strategy"
+			"\n\t5: Quit"
+			"\n\nInput: "
 			)			
 			os.system('cls' if os.name == 'nt' else 'clear')
 
-			if plays == "0":
+			if mode == "0":
 				print "==========================================================="
 				print "\tYou played", int(handsPlayed), "hand(s)."
 				print "\tYour lifetime total earnings was: ", totalGain
@@ -58,8 +63,10 @@ def main():
 					print "\tYour lifetime average earnings was: ", totalGain/handsPlayed
 				print "==========================================================="
 				break
-
-			elif plays == "1":
+			elif mode == "1":
+				PLAYER = CPU
+				CPU = 1-PLAYER
+			elif mode == "2":
 				while True:
 					print "Total Earnings: ", totalGain
 					if (handsPlayed == 0.0):
@@ -118,7 +125,7 @@ def main():
 					#Comment the next time to see full history
 					os.system('cls' if os.name == 'nt' else 'clear')
 				os.system('cls' if os.name == 'nt' else 'clear')
-			elif plays == "2":
+			elif mode == "3":
 				localGain = 0.0
 				localHands = 0.0
 				playerStrategy = {}
@@ -172,7 +179,7 @@ def main():
 				print "With an average earning of", localGain/localHands, "per hand"
 				print
 				
-			elif plays == "3":
+			elif mode == "4":
 				playerStrategy = cfrmKuhnStrategy
 				try:
 					plays = int(raw_input("Enter number of interations: "))
@@ -216,11 +223,18 @@ def main():
 				print "That strategy netted: ", localGain, "over", localHands, "hands"
 				print "With an average earning of", localGain/localHands, "per hand"
 				print
-			elif plays == "4":
-				PLAYER = CPU
-				CPU = 1-PLAYER
+			elif mode == "5":
+				print "==========================================================="
+				print "\tYou played", int(handsPlayed), "hand(s)."
+				print "\tYour lifetime total earnings was: ", totalGain
+				if(handsPlayed > 0.0):
+					print "\tYour lifetime average earnings was: ", totalGain/handsPlayed
+				print "==========================================================="
+				break
 			else: 
 				print "Please enter a valid input."
+		if mode == "5":
+			break
 def kuhnEval(history, PLAYER, CPU):
 	#Defines the player and opponent for current turn
 	plays = len(history)
@@ -244,8 +258,8 @@ def kuhnEval(history, PLAYER, CPU):
 	#if not leading bet, it was a pass bet and we should return None
 	return 1 if leadingBet else None
 
-	
-	
+
+#def simulate(iterations, playerStrategy, cfrmKuhnStrategy):
 
 if __name__ == "__main__":
 	main()
