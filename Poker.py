@@ -240,6 +240,7 @@ class PokerTrainer(object):
 
         round1brp = (history[:3] == "brp") or (history[:4] == "pbrp")
         if(round1brp):
+            #return 2
             return 3
 
         #Not terminal in round 1
