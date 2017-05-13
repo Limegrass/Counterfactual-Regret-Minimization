@@ -5,7 +5,7 @@ BET = 1
 RERAISE = 2
 #Change NUM_ACTIONS to 2 if no reraises allowed
 #NUM_ACTIONS = 3
-NUM_ACTIONS = 3
+NUM_ACTIONS = 2
 KUHN_DECK = [1,2,3]
 LEDUC_DECK = [1,1,2,2,3,3]
 
@@ -252,7 +252,8 @@ class PokerTrainer(object):
             if round1bb:
                 if leadingPass:
                     round2startIndex = 3
-                round1pot = 3
+                #round1pot = 3
+                round1pot = 2
             else:
                 round1br = (history[:3] == "brb") or (history[:4] == "pbrb")
                 if round1br:
@@ -262,7 +263,8 @@ class PokerTrainer(object):
                     #Only one nonterminal state left, 3
                     else:
                         round2startIndex = 3
-                    round1pot = 5
+                    #round1pot = 5
+                    round1pot = 4
 
         #Round 1 unfinished (eg only 1 move is done)
         if not (round1pp or round1bb or round1br):
@@ -272,7 +274,8 @@ class PokerTrainer(object):
         round2History = history[round2startIndex:]
 
         round2Plays = len(round2History)
-        if plays - round2Plays < 2:
+        
+        if round2Plays < 2:
             return None
 
         #Bet pass in round 2
@@ -283,7 +286,8 @@ class PokerTrainer(object):
         #Bet raise pass in round 2
         round2brp = (round2History == "brp") or (round2History == "pbrp")
         if(round2brp):
-            return 4+round1pot
+            #return 4+round1pot
+            return 2*round1pot
 
         player = round2Plays%2
         opponent = 1-player
@@ -302,14 +306,16 @@ class PokerTrainer(object):
         if round2bb:
             if tie:
                 return 0
-            return 4+round1pot if winner else -(4+round1pot)
+            #return 4+round1pot if winner else -(4+round1pot)
+            return 2*round1pot if winner else -(2*round1pot)
 
         #Betraise to showdown
         round2br = (round2History == "brb") or (round2History == "pbrb")
         if round2br: 
             if tie:
                 return 0
-            return 8+round1pot if winner else -(8+round1pot)
+            #return 8+round1pot if winner else -(8+round1pot)
+            return 4*round1pot if winner else -(4*round1pot)
 
 
 
@@ -323,7 +329,9 @@ def main():
     #Takes input of game type
     trainer = PokerTrainer("leduc") 
     #Number of trials
-    trainer.train(1000)
+    trainer.train(1000000)
+    
+    
 
 if __name__ == "__main__":
     main()
